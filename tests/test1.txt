@@ -1,0 +1,48 @@
+start_prog
+block_var_def
+int a
+int b
+int res_mult
+int res_div
+float c
+float d
+float res_add
+float res_sub
+bool e
+bool f
+bool res_and
+bool res_or
+bool res_not
+class MyClass:
+	int class_int
+	float class_float
+	bool class_bool
+MyClass class_var1
+MyClass class_var2
+endblock_var_def
+a = 4
+b = 5
+c = 2.5
+d = 5.0
+e = true
+f = false
+res_mult = a * b { Умножение }
+res_div = a / b { Деление }
+res_add = c + d
+res_sub = c - d
+{ А это
+многострочный комментарий }
+res_and = e and f
+res_or = e or f
+res_not = not e
+class_var1.class_int = 5
+class_var2.class_int = class_var1.class_int + 1
+
+match class_var2.class_int:
+	case 4:
+		a = 8
+	case 5:
+		a = 9
+	case _:
+		a = 10
+end_prog
