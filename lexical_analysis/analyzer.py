@@ -34,7 +34,6 @@ class LexicalAnalyzer:
         with open(filename, 'w') as f:
             f.write(''.join(map(str, self.tokens)))
 
-
     def analyze(self):
         """Анализ файла"""
         for line in self.data:
@@ -94,7 +93,9 @@ class LexicalAnalyzer:
                                 token_type = const.FLOAT
                             self.tokens.append(DigitalConstToken.get_or_create(lexeme=lexeme, type=token_type))
                         else:
-                            self.tokens.append(IdentifierToken.get_or_create(lexeme))
+                            token_ = IdentifierToken.get_or_create(lexeme)
+                            if token_:
+                                self.tokens.append(token_)
 
                 if new_state in [-11, -12, -13, -16, -18, -20, -21, -22]:
                     # Состояния с возвратом 1.

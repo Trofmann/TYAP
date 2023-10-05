@@ -12,7 +12,10 @@ __all__ = [
 class IdentifierToken(Token):
     """Токен идентификатора"""
 
-    def __init__(self, value, attr_name, attr_value, type):
+    CATEGORY_VAR = 1  # Переменная
+    CATEGORY_TYPE = 2  # Тип
+
+    def __init__(self, value, attr_name, attr_value, type, category=None):
         super().__init__(name='id', code=25, value=value)
         # Обозначение идентификатора
         self.attr_name = attr_name
@@ -21,6 +24,9 @@ class IdentifierToken(Token):
         self.type = type
         # Если идентификатор используется для типа запись, то здесь хранятся поля
         self.fields = []
+
+        # Категория идентификатора
+        self.category = category
 
     @property
     def parent_identifier_token(self):
@@ -31,6 +37,8 @@ class IdentifierToken(Token):
     @classmethod
     def get_or_create(cls, lexeme):
         """Находим в таблице идентификаторов токен с attr_name==lexeme или создаём его"""
+        if not lexeme or lexeme == ' ':
+            return
         found = list(filter(lambda x: x.attr_name == lexeme, identifiers_table))
         if found:
             return found[0]
