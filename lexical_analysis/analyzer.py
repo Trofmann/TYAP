@@ -39,7 +39,6 @@ class LexicalAnalyzer:
         for line in self.data:
             if line and line != '\n':
                 self._analyze_line(line)
-        print()
 
     def _analyze_line(self, line):
         """Анализ строки файла """

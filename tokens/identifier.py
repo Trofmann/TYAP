@@ -12,8 +12,8 @@ __all__ = [
 class IdentifierToken(Token):
     """Токен идентификатора"""
 
-    CATEGORY_VAR = 1  # Переменная
-    CATEGORY_TYPE = 2  # Тип
+    CATEGORY_VAR = 'var'  # Переменная
+    CATEGORY_TYPE = 'type'  # Тип
 
     def __init__(self, value, attr_name, attr_value, type, category=None):
         super().__init__(name='id', code=25, value=value)
@@ -30,7 +30,7 @@ class IdentifierToken(Token):
 
     @property
     def parent_identifier_token(self):
-        if not isinstance(Iterable, self.value):
+        if not isinstance(self.value, Iterable):
             return None
         return identifiers_table[self.value[0]]
 
@@ -48,9 +48,15 @@ class IdentifierToken(Token):
         return new_token
 
 
-INT_TOKEN = IdentifierToken(value=0, attr_name=const.INT, attr_value=const.INT, type=None)
-FLOAT_TOKEN = IdentifierToken(value=1, attr_name=const.FLOAT, attr_value=const.FLOAT, type=None)
-BOOL_TOKEN = IdentifierToken(value=2, attr_name=const.BOOL, attr_value=const.BOOL, type=None)
+INT_TOKEN = IdentifierToken(
+    value=0, attr_name=const.INT, attr_value=const.INT, type=None, category=IdentifierToken.CATEGORY_TYPE
+)
+FLOAT_TOKEN = IdentifierToken(
+    value=1, attr_name=const.FLOAT, attr_value=const.FLOAT, type=None, category=IdentifierToken.CATEGORY_TYPE
+)
+BOOL_TOKEN = IdentifierToken(
+    value=2, attr_name=const.BOOL, attr_value=const.BOOL, type=None, category=IdentifierToken.CATEGORY_TYPE
+)
 
 identifiers_table = [
     INT_TOKEN,
