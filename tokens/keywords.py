@@ -1,4 +1,4 @@
-from lexical_analysis.tokens.token import Token
+from tokens.token import Token
 from lexical_analysis import const
 
 __all__ = [

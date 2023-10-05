@@ -1,5 +1,5 @@
 from lexical_analysis.const import INF
-from lexical_analysis.tokens import *
+from tokens import *
 
 __all__ = [
     'STATE_TRANSITION_TABLE',

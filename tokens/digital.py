@@ -1,5 +1,5 @@
 from lexical_analysis import const
-from lexical_analysis.tokens.token import Token
+from tokens.token import Token
 
 __all__ = [
     'DigitalConstToken',

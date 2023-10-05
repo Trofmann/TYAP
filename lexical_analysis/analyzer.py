@@ -4,7 +4,7 @@ from . import const
 from . import utils
 from .custom_exceptions import WrongSymbolException
 from .state_machine import STATE_TRANSITION_TABLE, STATE_TOKEN_MAPPING
-from .tokens import *
+from tokens import *
 
 __all__ = [
     'LexicalAnalyzer'
