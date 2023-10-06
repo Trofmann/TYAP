@@ -1,13 +1,14 @@
 from typing import List
 from tokens import (
     Token, IdentifierToken, CLASS_TOKEN, COLON_TOKEN, NL_TOKEN, TAB_TOKEN, START_PROG_TOKEN, END_PROG_TOKEN,
-    BLOCK_VAR_DEF_TOKEN, ENDBLOCK_VAR_DEF_TOKEN
+    BLOCK_VAR_DEF_TOKEN, ENDBLOCK_VAR_DEF_TOKEN, INT_TOKEN, FLOAT_TOKEN, BOOL_TOKEN, identifiers_table
 )
 from .custom_exceptions import (
     IdentifierRedeclarationException, TabExpectedException, NewLineExpectedException, TypeNameExpectedException,
     StartProgExpectedError, EndProgExpectedError, BlockVarDefExpectedError, EndBlockVarDefExpectedError,
     VarNameExpectedError, AnalysisException, FieldRedeclarationError,
 )
+from copy import deepcopy
 
 
 class SyntacticalAnalyzer(object):
@@ -17,12 +18,20 @@ class SyntacticalAnalyzer(object):
         self.tokens = tokens
 
     @staticmethod
-    def _add_identifier_category(token: IdentifierToken, category, type_=None):
+    def _add_identifier_category(token: IdentifierToken, category, type_token=None):
         """Установка категории идентификатора"""
         if token.category is not None:
             raise IdentifierRedeclarationException()
         token.category = category
-        token.type = type_
+        token.type = type_token
+
+        if category == IdentifierToken.CATEGORY_VAR:
+            # Объявляем переменную
+            if type_token not in [INT_TOKEN, FLOAT_TOKEN, BOOL_TOKEN]:
+                # Значит имеем дело с классом.
+                # Скопируем поля
+                token.fields = deepcopy(type_token.fields)
+                print()
 
     def _clean_nl_tokens(self):
         """Очистка перевода строк"""
@@ -44,6 +53,7 @@ class SyntacticalAnalyzer(object):
         # Если дошли сюда, значит ожидаем встретить перевод строки и блок объявления переменных
         self._clean_nl_tokens()  # Очистим от перевода строк
 
+        # region Объявление переменных
         # Ожидаем начало блока объявления переменных
         if self.tokens[0] != BLOCK_VAR_DEF_TOKEN:
             raise BlockVarDefExpectedError()
@@ -57,7 +67,13 @@ class SyntacticalAnalyzer(object):
         self._clean_nl_tokens()
         self.tokens.insert(0, NL_TOKEN)  # Хак для удобства
         endblock_var_def_index = self.var_definition()
-        print()
+        self.tokens = self.tokens[endblock_var_def_index + 1::]
+
+        # Очистим таблицу идентификатором от идентификаторов без категории.
+        # Такие могли появиться из-за того, что поля класса вносились в таблицу идентификаторов
+        global identifiers_table
+        identifiers_table = list(filter(lambda x: x.category is not None, identifiers_table))
+        # endregion
 
     def var_definition(self):
         """Разбор блока описания переменных"""
@@ -116,7 +132,7 @@ class SyntacticalAnalyzer(object):
                                     IdentifierToken) and prev_token.category == IdentifierToken.CATEGORY_TYPE:
                         # Предыдущий токен - тип. Значит здесь объявление переменной типа
                         self._add_identifier_category(
-                            token, category=IdentifierToken.CATEGORY_VAR, type_=prev_token.attr_name
+                            token, category=IdentifierToken.CATEGORY_VAR, type_token=prev_token
                         )
                     else:
                         raise AnalysisException()
@@ -143,7 +159,6 @@ class SyntacticalAnalyzer(object):
                     # Если следующий токен не таб, то выходим из состояния объявления класс
                     elif next_token != TAB_TOKEN:
                         in_class_declaration_state = False
-                        # TODO: в момент выхода из состояния схлопнуть поля в один идентификатор
                 elif token == TAB_TOKEN:
                     # Табуляция. Должна быть только после перевода на новую строку
                     if prev_token != NL_TOKEN:
@@ -153,7 +168,7 @@ class SyntacticalAnalyzer(object):
                     prev_token = self.tokens[index - 1]
                     # Предыдущий токен - таб
                     if prev_token == TAB_TOKEN:
-                        next_token = self.tokens[index+1]
+                        next_token = self.tokens[index + 1]
                         # А значит текущий может быть только типом
                         if token.category != IdentifierToken.CATEGORY_TYPE:
                             raise TypeNameExpectedException()

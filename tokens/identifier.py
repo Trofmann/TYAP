@@ -6,6 +6,9 @@ from tokens.token import Token
 __all__ = [
     'IdentifierToken',
     'identifiers_table',
+    'INT_TOKEN',
+    'FLOAT_TOKEN',
+    'BOOL_TOKEN',
 ]
 
 
