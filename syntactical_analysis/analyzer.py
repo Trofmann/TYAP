@@ -6,7 +6,7 @@ from tokens import (
 from .custom_exceptions import (
     IdentifierRedeclarationException, TabExpectedException, NewLineExpectedException, TypeNameExpectedException,
     StartProgExpectedError, EndProgExpectedError, BlockVarDefExpectedError, EndBlockVarDefExpectedError,
-    VarNameExpectedError, AnalysisException,
+    VarNameExpectedError, AnalysisException, FieldRedeclarationError,
 )
 
 
@@ -57,6 +57,7 @@ class SyntacticalAnalyzer(object):
         self._clean_nl_tokens()
         self.tokens.insert(0, NL_TOKEN)  # Хак для удобства
         endblock_var_def_index = self.var_definition()
+        print()
 
     def var_definition(self):
         """Разбор блока описания переменных"""
@@ -152,16 +153,38 @@ class SyntacticalAnalyzer(object):
                     prev_token = self.tokens[index - 1]
                     # Предыдущий токен - таб
                     if prev_token == TAB_TOKEN:
+                        next_token = self.tokens[index+1]
                         # А значит текущий может быть только типом
                         if token.category != IdentifierToken.CATEGORY_TYPE:
                             raise TypeNameExpectedException()
+                        # А следующий - переводом идентифкатором
+                        if not isinstance(next_token, IdentifierToken):
+                            raise VarNameExpectedError()
                     # Предыдущий токен - идентификатор
                     elif isinstance(prev_token, IdentifierToken):
                         # Предыдущее условие гарантирует, предыдущий токен именно имя типа
-                        # А значит текущий должен быть переменной
-                        # TODO: создать новый идентификатор на основе этого и добавить в fields new_class_token с проверкой на вхождение
+                        # А значит текущий должен быть переменной, т.е НЕ именем типа
+                        if token.category == IdentifierToken.CATEGORY_TYPE:
+                            raise VarNameExpectedError()
+                        # Попробуем найти в полях типа объявляемого типа
+                        found = list(filter(lambda x: x.attr_name == token.attr_name, new_class_token.fields))
+                        if found:
+                            # Поле повторно объявлять нельзя
+                            raise FieldRedeclarationError()
+                        else:
+                            # Не нашли. Значит можем добавить в поля.
+                            # Создадим новый. Этот менять нельзя, чтобы не было пересечений
+                            identifier = IdentifierToken(
+                                value=len(new_class_token.fields),
+                                attr_name=token.attr_name,
+                                attr_value=None,
+                                type=prev_token.attr_name,
+                                category=IdentifierToken.CATEGORY_VAR,
+                            )
+                            new_class_token.fields.append(identifier)
                         # TODO: а для переменных класса копировать поля
                         pass
-                    # Во-первых, идентификатор может идти или после табуляции, или после идентификатора
-            elif token == ENDBLOCK_VAR_DEF_TOKEN:
-                return index  # Вернём Индекс токена окончания блока описания переменных (endblock_var_def)
+                    else:
+                        raise AnalysisException()
+                else:
+                    raise AnalysisException()

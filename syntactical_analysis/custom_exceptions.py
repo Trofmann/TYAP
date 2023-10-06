@@ -13,6 +13,10 @@ class IdentifierRedeclarationException(BaseAnalyzerException):
     msg = 'Повторное объявление идентификатора'
 
 
+class FieldRedeclarationError(BaseAnalyzerException):
+    msg = 'Повторное объявление поля класса'
+
+
 class TabExpectedException(BaseAnalyzerException):
     msg = 'Ожидалась табуляция'
 
