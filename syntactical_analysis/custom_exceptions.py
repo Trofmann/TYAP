@@ -25,6 +25,10 @@ class TypeNameExpectedException(BaseAnalyzerException):
     msg = 'Ожидалось имя типа'
 
 
+class VarNameExpectedError(BaseAnalyzerException):
+    msg = 'Ожидалось имя переменной'
+
+
 class StartProgExpectedError(BaseAnalyzerException):
     msg = 'Программа должна начинаться со start_prog'
 

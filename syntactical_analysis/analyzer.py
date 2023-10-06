@@ -5,7 +5,8 @@ from tokens import (
 )
 from .custom_exceptions import (
     IdentifierRedeclarationException, TabExpectedException, NewLineExpectedException, TypeNameExpectedException,
-    StartProgExpectedError, EndProgExpectedError, BlockVarDefExpectedError, EndBlockVarDefExpectedError
+    StartProgExpectedError, EndProgExpectedError, BlockVarDefExpectedError, EndBlockVarDefExpectedError,
+    VarNameExpectedError, AnalysisException,
 )
 
 
@@ -24,6 +25,7 @@ class SyntacticalAnalyzer(object):
         token.type = type_
 
     def _clean_nl_tokens(self):
+        """Очистка перевода строк"""
         while len(self.tokens) and self.tokens[0] == NL_TOKEN:
             self.tokens.pop(0)
 
@@ -53,28 +55,70 @@ class SyntacticalAnalyzer(object):
         # Дошли до сюда, значит есть блок описания идентификаторов
         self.tokens.pop(0)  # Удалим block_var_def
         self._clean_nl_tokens()
+        self.tokens.insert(0, NL_TOKEN)  # Хак для удобства
+        endblock_var_def_index = self.var_definition()
 
-    def set_types_and_categories(self):
-        """Проставление типов и категорий"""
+    def var_definition(self):
+        """Разбор блока описания переменных"""
+        endblock_var_def_index = None  # Индекс токена окончания блока описания переменных (endblock_var_def)
+
         # Флаг, показывающий, что находимся в состоянии объявления класса
         in_class_declaration_state = False
         # Токен, являющийся новым классом
         new_class_token = None
         for index, token in enumerate(self.tokens):
-            if not in_class_declaration_state and isinstance(token, IdentifierToken):
-                # Пришёл идентификатор
-                prev_token = self.tokens[index - 1]
-                if prev_token == CLASS_TOKEN:
-                    # Предыдущий токен - ключевое слово class. Значит здесь объявление типа
-                    self._add_identifier_category(token, category=IdentifierToken.CATEGORY_TYPE)
-                    # Начинается объявление класса
-                    in_class_declaration_state = True
-                    new_class_token = token
-                elif isinstance(prev_token, IdentifierToken) and prev_token.category == IdentifierToken.CATEGORY_TYPE:
-                    # Предыдущий токен - тип. Значит здесь объявление переменной типа
-                    self._add_identifier_category(
-                        token, category=IdentifierToken.CATEGORY_VAR, type_=prev_token.attr_name
-                    )
+            if not in_class_declaration_state:
+                # НЕ Находимся объявления класса. Значит ожидаем увидеть или перевод строки, или идентификатор,
+                # или endblock_var_def, или class
+                if token == NL_TOKEN:
+                    # Пусть вначале идёт перевод строки
+                    if index:
+                        # Пришёл перевод строки, а значит перед этим должна быть переменная
+                        # Перевод строки после имени типа недопустим
+                        prev_token = self.tokens[index - 1]
+                        if (not isinstance(prev_token, IdentifierToken) or
+                                prev_token.category == IdentifierToken.CATEGORY_TYPE):
+                            raise VarNameExpectedError()
+                        else:
+                            # В противном случае всё хорошо. Продолжаем.
+                            pass
+                elif token == ENDBLOCK_VAR_DEF_TOKEN:
+                    prev_token = self.tokens[index - 1]
+                    if prev_token != NL_TOKEN:
+                        # Перед endblock_var_def должен быть перевод строки
+                        raise AnalysisException()
+                    else:
+                        # Всё хорошо. Вернём индекс
+                        return index
+                elif token == CLASS_TOKEN:
+                    prev_token = self.tokens[index - 1]
+                    if prev_token != NL_TOKEN:
+                        # Перед class должен быть перевод строки
+                        raise AnalysisException()
+                    else:
+                        # Всё хорошо. Продолжаем
+                        pass
+                elif isinstance(token, IdentifierToken):
+                    # Пришёл идентификатор
+                    prev_token = self.tokens[index - 1]
+                    if prev_token == NL_TOKEN:
+                        # После перевода строки, а значит текущий токен обязательно должен быть именем типа
+                        if token.category != IdentifierToken.CATEGORY_TYPE:
+                            raise TypeNameExpectedException()
+                    elif prev_token == CLASS_TOKEN:
+                        # Предыдущий токен - ключевое слово class. Значит здесь объявление типа
+                        self._add_identifier_category(token, category=IdentifierToken.CATEGORY_TYPE)
+                        # Начинается объявление класса
+                        in_class_declaration_state = True
+                        new_class_token = token
+                    elif isinstance(prev_token,
+                                    IdentifierToken) and prev_token.category == IdentifierToken.CATEGORY_TYPE:
+                        # Предыдущий токен - тип. Значит здесь объявление переменной типа
+                        self._add_identifier_category(
+                            token, category=IdentifierToken.CATEGORY_VAR, type_=prev_token.attr_name
+                        )
+                    else:
+                        raise AnalysisException()
             elif in_class_declaration_state:
                 # Находимся в состоянии объявления класса
                 prev_token = self.tokens[index - 1]
@@ -90,7 +134,7 @@ class SyntacticalAnalyzer(object):
                             # Пришёл не таб. Ошибка
                             raise TabExpectedException()
                         else:
-                            # Пришёл так, всё хорошо
+                            # Пришёл таб, всё хорошо
                             pass
                     elif next_token == TAB_TOKEN:
                         # Всё хорошо, ничего не делаем
@@ -119,3 +163,5 @@ class SyntacticalAnalyzer(object):
                         # TODO: а для переменных класса копировать поля
                         pass
                     # Во-первых, идентификатор может идти или после табуляции, или после идентификатора
+            elif token == ENDBLOCK_VAR_DEF_TOKEN:
+                return index  # Вернём Индекс токена окончания блока описания переменных (endblock_var_def)
