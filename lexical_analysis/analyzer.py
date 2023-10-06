@@ -42,6 +42,8 @@ class LexicalAnalyzer:
 
     def _analyze_line(self, line):
         """Анализ строки файла """
+        if line == 'end_prog':
+            self.tokens.append(END_PROG_TOKEN)
         left, right = 0, 0
         while right <= len(line) - 1:
 

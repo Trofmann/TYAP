@@ -1,6 +1,12 @@
 from typing import List
-from tokens import Token, IdentifierToken, CLASS_TOKEN
-from .custom_exceptions import IdentifierRedeclarationException
+from tokens import (
+    Token, IdentifierToken, CLASS_TOKEN, COLON_TOKEN, NL_TOKEN, TAB_TOKEN, START_PROG_TOKEN, END_PROG_TOKEN,
+    BLOCK_VAR_DEF_TOKEN, ENDBLOCK_VAR_DEF_TOKEN
+)
+from .custom_exceptions import (
+    IdentifierRedeclarationException, TabExpectedException, NewLineExpectedException, TypeNameExpectedException,
+    StartProgExpectedError, EndProgExpectedError, BlockVarDefExpectedError, EndBlockVarDefExpectedError
+)
 
 
 class SyntacticalAnalyzer(object):
@@ -17,17 +23,99 @@ class SyntacticalAnalyzer(object):
         token.category = category
         token.type = type_
 
+    def _clean_nl_tokens(self):
+        while len(self.tokens) and self.tokens[0] == NL_TOKEN:
+            self.tokens.pop(0)
+
+    def analyze(self):
+        if self.tokens[0] != START_PROG_TOKEN:
+            # Программа должна начинаться с start_prog
+            raise StartProgExpectedError()
+        if self.tokens[-1] != END_PROG_TOKEN:
+            # И заканчиваться на end_prog
+            raise EndProgExpectedError()
+
+        # Удалим start_prog и end_prog. Они нам больше не нужны
+        self.tokens.pop(0)  # Удаляем start_prog
+        self.tokens.pop(-1)  # Удаляем end_prog
+
+        # Если дошли сюда, значит ожидаем встретить перевод строки и блок объявления переменных
+        self._clean_nl_tokens()  # Очистим от перевода строк
+
+        # Ожидаем начало блока объявления переменных
+        if self.tokens[0] != BLOCK_VAR_DEF_TOKEN:
+            raise BlockVarDefExpectedError()
+
+        # Ожидаем, что в программе есть окончание блока объявления переменных
+        if ENDBLOCK_VAR_DEF_TOKEN not in self.tokens:
+            raise EndBlockVarDefExpectedError()
+
+        # Дошли до сюда, значит есть блок описания идентификаторов
+        self.tokens.pop(0)  # Удалим block_var_def
+        self._clean_nl_tokens()
+
     def set_types_and_categories(self):
         """Проставление типов и категорий"""
+        # Флаг, показывающий, что находимся в состоянии объявления класса
+        in_class_declaration_state = False
+        # Токен, являющийся новым классом
+        new_class_token = None
         for index, token in enumerate(self.tokens):
-            if isinstance(token, IdentifierToken):
+            if not in_class_declaration_state and isinstance(token, IdentifierToken):
                 # Пришёл идентификатор
                 prev_token = self.tokens[index - 1]
                 if prev_token == CLASS_TOKEN:
                     # Предыдущий токен - ключевое слово class. Значит здесь объявление типа
                     self._add_identifier_category(token, category=IdentifierToken.CATEGORY_TYPE)
+                    # Начинается объявление класса
+                    in_class_declaration_state = True
+                    new_class_token = token
                 elif isinstance(prev_token, IdentifierToken) and prev_token.category == IdentifierToken.CATEGORY_TYPE:
                     # Предыдущий токен - тип. Значит здесь объявление переменной типа
                     self._add_identifier_category(
                         token, category=IdentifierToken.CATEGORY_VAR, type_=prev_token.attr_name
                     )
+            elif in_class_declaration_state:
+                # Находимся в состоянии объявления класса
+                prev_token = self.tokens[index - 1]
+                if token == COLON_TOKEN and prev_token == new_class_token:
+                    # Двоеточие после имени класса. Всё хорошо
+                    pass
+                elif token == NL_TOKEN:
+                    # Перевод на новую строку.
+                    next_token = self.tokens[index + 1]
+                    # Если предыдущий токен - двоеточие, то следующий обязательно таб
+                    if prev_token == COLON_TOKEN:
+                        if next_token != TAB_TOKEN:
+                            # Пришёл не таб. Ошибка
+                            raise TabExpectedException()
+                        else:
+                            # Пришёл так, всё хорошо
+                            pass
+                    elif next_token == TAB_TOKEN:
+                        # Всё хорошо, ничего не делаем
+                        pass
+                    # Если следующий токен не таб, то выходим из состояния объявления класс
+                    elif next_token != TAB_TOKEN:
+                        in_class_declaration_state = False
+                        # TODO: в момент выхода из состояния схлопнуть поля в один идентификатор
+                elif token == TAB_TOKEN:
+                    # Табуляция. Должна быть только после перевода на новую строку
+                    if prev_token != NL_TOKEN:
+                        raise NewLineExpectedException()
+                elif isinstance(token, IdentifierToken):
+                    # Встретили идентификатор
+                    prev_token = self.tokens[index - 1]
+                    # Предыдущий токен - таб
+                    if prev_token == TAB_TOKEN:
+                        # А значит текущий может быть только типом
+                        if token.category != IdentifierToken.CATEGORY_TYPE:
+                            raise TypeNameExpectedException()
+                    # Предыдущий токен - идентификатор
+                    elif isinstance(prev_token, IdentifierToken):
+                        # Предыдущее условие гарантирует, предыдущий токен именно имя типа
+                        # А значит текущий должен быть переменной
+                        # TODO: создать новый идентификатор на основе этого и добавить в fields new_class_token с проверкой на вхождение
+                        # TODO: а для переменных класса копировать поля
+                        pass
+                    # Во-первых, идентификатор может идти или после табуляции, или после идентификатора
