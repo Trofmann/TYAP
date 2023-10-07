@@ -23,7 +23,7 @@ class SyntacticalAnalyzer(object):
         if token.category is not None:
             raise IdentifierRedeclarationException()
         token.category = category
-        token.type = type_token
+        token.type = type_token.attr_name
 
         if category == IdentifierToken.CATEGORY_VAR:
             # Объявляем переменную
