@@ -23,7 +23,7 @@ class DigitalConstToken(Token):
         if type == const.INT:
             attr = int(attr)
 
-        found = list(filter(lambda x: x.attr == attr, digital_consts_table))
+        found = list(filter(lambda x: x.attr == attr and x.type == type, digital_consts_table))
         if found:
             return found[0]
         token_value = len(digital_consts_table)
