@@ -1,8 +1,6 @@
-from typing import List
-
 from lexical_analysis.const import BOOL
 from tokens import (
-    Token, IdentifierToken,
+    IdentifierToken,
     ASSIGNMENT_TOKEN, POINT_TOKEN,
     EQUAL_TOKEN, NOT_EQUAL_TOKEN, LESS_TOKEN, LESS_EQUAL_TOKEN, MORE_TOKEN, MORE_EQUAL_TOKEN,
     AND_TOKEN, OR_TOKEN, NOT_TOKEN, TRUE_TOKEN, FALSE_TOKEN,
@@ -11,6 +9,7 @@ from .custom_exceptions import (
     WrongTokenError, AssignmentExpectedError, UnknownFieldError, WrongExpressionError, TypeIncompatibilityError,
     RelationCountError
 )
+from .identifier_info import IdentifierInfo
 
 __all__ = [
     'ExpressionAnalyzer',
@@ -18,7 +17,7 @@ __all__ = [
 
 
 class ExpressionAnalyzer(object):
-    def __init__(self, tokens: List[Token]):
+    def __init__(self, tokens):
         self.tokens = tokens
         self.analyze()
 
@@ -29,8 +28,12 @@ class ExpressionAnalyzer(object):
         if self.tokens[-1] == ASSIGNMENT_TOKEN:
             # Гарантируем наличие правой части выражения
             raise WrongExpressionError()
-        identifier_type, identifier_full_name = self.analyze_left_part()
-        self.analyze_right_part(type_=identifier_type)
+        identifier_info = self.analyze_left_part()
+        # Если дошли досюда, значит с левой частью всё норм. Можно схлопнуть
+        assignment_index = self.tokens.index(ASSIGNMENT_TOKEN)
+        self.tokens = self.tokens[assignment_index::]
+        self.tokens.insert(0, identifier_info)
+        self.analyze_right_part(type_=identifier_info.type)
 
     def analyze_left_part(self):
         """Анализ левой части выражения"""
@@ -74,7 +77,7 @@ class ExpressionAnalyzer(object):
                 else:
                     raise WrongTokenError()
         # Вернём тип идентификатора и его полное имя
-        return identifier.type, full_name
+        return IdentifierInfo(full_name, identifier.type)
 
     def analyze_right_part(self, type_):
         """Анализ правой части выражения"""
@@ -116,4 +119,3 @@ class ExpressionAnalyzer(object):
         # 2. NOT
         # 3. AND, *, /
         # 4. OR, +, -
-
