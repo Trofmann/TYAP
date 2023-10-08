@@ -63,3 +63,11 @@ class UnknownFieldError(BaseAnalyzerException):
 
 class WrongExpressionError(BaseAnalyzerException):
     msg = 'Неверное выражение'
+
+
+class TypeIncompatibilityError(BaseAnalyzerException):
+    msg = 'Типы не совместимы'
+
+
+class RelationCountError(BaseAnalyzerException):
+    msg = 'Допустимо не более 1 операции сравнения'
