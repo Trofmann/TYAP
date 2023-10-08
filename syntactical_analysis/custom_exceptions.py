@@ -5,6 +5,10 @@ class BaseAnalyzerException(Exception):
         super().__init__(self.msg)
 
 
+class WrongTokenError(Exception):
+    msg = 'Неверный токен'
+
+
 class AnalysisException(BaseAnalyzerException):
     msg = 'Произошла ошибка'
 

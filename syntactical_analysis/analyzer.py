@@ -1,14 +1,25 @@
+from copy import deepcopy
 from typing import List
+
 from tokens import (
-    Token, IdentifierToken, CLASS_TOKEN, COLON_TOKEN, NL_TOKEN, TAB_TOKEN, START_PROG_TOKEN, END_PROG_TOKEN,
-    BLOCK_VAR_DEF_TOKEN, ENDBLOCK_VAR_DEF_TOKEN, INT_TOKEN, FLOAT_TOKEN, BOOL_TOKEN, identifiers_table
+    Token, IdentifierToken, DigitalConstToken,
+    CLASS_TOKEN, COLON_TOKEN, NL_TOKEN, TAB_TOKEN, START_PROG_TOKEN, END_PROG_TOKEN,
+    BLOCK_VAR_DEF_TOKEN, ENDBLOCK_VAR_DEF_TOKEN, MATCH_TOKEN, POINT_TOKEN,
+    INT_TOKEN, FLOAT_TOKEN, BOOL_TOKEN,
+    PLUS_TOKEN, MINUS_TOKEN, DIV_TOKEN, MULT_TOKEN, AND_TOKEN, OR_TOKEN, NOT_TOKEN,
+    EQUAL_TOKEN, NOT_EQUAL_TOKEN, LESS_TOKEN, MORE_TOKEN, LESS_EQUAL_TOKEN, MORE_EQUAL_TOKEN,
+    ASSIGNMENT_TOKEN,
+    TRUE_TOKEN, FALSE_TOKEN,
+    identifiers_table
 )
 from .custom_exceptions import (
     IdentifierRedeclarationException, TabExpectedException, NewLineExpectedException, TypeNameExpectedException,
     StartProgExpectedError, EndProgExpectedError, BlockVarDefExpectedError, EndBlockVarDefExpectedError,
-    VarNameExpectedError, AnalysisException, FieldRedeclarationError,
+    VarNameExpectedError, AnalysisException, FieldRedeclarationError, WrongTokenError,
 )
-from copy import deepcopy
+from .expression_analyzer import ExpressionAnalyzer
+
+identifiers_table = identifiers_table
 
 
 class SyntacticalAnalyzer(object):
@@ -23,7 +34,8 @@ class SyntacticalAnalyzer(object):
         if token.category is not None:
             raise IdentifierRedeclarationException()
         token.category = category
-        token.type = type_token.attr_name
+        if type_token:
+            token.type = type_token.attr_name
 
         if category == IdentifierToken.CATEGORY_VAR:
             # Объявляем переменную
@@ -74,6 +86,66 @@ class SyntacticalAnalyzer(object):
         global identifiers_table
         identifiers_table = list(filter(lambda x: x.category is not None, identifiers_table))
         # endregion
+
+        self._clean_nl_tokens()
+
+        current_token_index = 0
+        tokens_count = len(self.tokens)  # Количество оставшихся токенов
+        while True:
+            if current_token_index == len(self.tokens):
+                # Дошли до конца
+                break
+            # Пока оставим while True, надо что-то придумать
+            token = self.tokens[current_token_index]
+            if token == NL_TOKEN:
+                # Перевод строки. Пропустим
+                current_token_index += 1
+            elif isinstance(token, IdentifierToken):
+                # Встретили идентификатор, а значит дальше будет выражение
+                # current_token_index += 1
+                expression_tokens = [token]
+                while True:
+                    # Начнём собирать токены для выражения до переноса строки
+                    # Нам могут встретиться: идентификаторы, числовые константы, операторы,
+                    # ключевые слова True Или False, знак присвоения
+                    current_token_index += 1
+
+                    if current_token_index == tokens_count:
+                        # Дошли до конца файла. Выйдем
+                        break
+                    token = self.tokens[current_token_index]
+
+                    if token == NL_TOKEN:
+                        # Дошли до конца строки. Выйдем
+                        break
+
+                    identifier_cond = isinstance(token, IdentifierToken)
+                    digital_const_cond = isinstance(token, DigitalConstToken)
+                    operator_cond = token in [
+                        PLUS_TOKEN, MINUS_TOKEN, DIV_TOKEN, MULT_TOKEN, AND_TOKEN, OR_TOKEN, NOT_TOKEN,
+                        EQUAL_TOKEN, NOT_EQUAL_TOKEN, LESS_TOKEN, MORE_TOKEN, LESS_EQUAL_TOKEN, MORE_EQUAL_TOKEN
+                    ]
+                    true_false_cond = token in [TRUE_TOKEN, FALSE_TOKEN]
+                    assignment_token = (token == ASSIGNMENT_TOKEN)
+                    point_cond = (token == POINT_TOKEN)
+                    cond = any([
+                        identifier_cond, digital_const_cond, operator_cond, true_false_cond,
+                        assignment_token, point_cond
+                    ])
+
+                    # Пока просто проверим, что нам придут правильные токены. Все остальные проверки позже
+                    if cond:
+                        # Удовлетворяет хотя бы одному условию, добавим
+                        expression_tokens.append(token)
+                    else:
+                        raise WrongTokenError()
+
+                # Собрали токены выражения. Надо обработать
+                expression_analyzer = ExpressionAnalyzer(tokens=expression_tokens)
+            elif token == MATCH_TOKEN:
+                raise NotImplementedError()
+            else:
+                raise AnalysisException()
 
     def var_definition(self):
         """Разбор блока описания переменных"""
@@ -197,7 +269,6 @@ class SyntacticalAnalyzer(object):
                                 category=IdentifierToken.CATEGORY_VAR,
                             )
                             new_class_token.fields.append(identifier)
-                        # TODO: а для переменных класса копировать поля
                         pass
                     else:
                         raise AnalysisException()
