@@ -1,6 +1,6 @@
 from typing import List
 from tokens import Token, ASSIGNMENT_TOKEN, IdentifierToken, POINT_TOKEN
-from .custom_exceptions import WrongTokenError, AssignmentExpectedError, UnknownFieldError
+from .custom_exceptions import WrongTokenError, AssignmentExpectedError, UnknownFieldError, WrongExpressionError
 
 __all__ = [
     'ExpressionAnalyzer',
@@ -16,6 +16,9 @@ class ExpressionAnalyzer(object):
         if self.tokens.count(ASSIGNMENT_TOKEN) != 1:
             # Значительно упростит дальнейший анализ
             raise AssignmentExpectedError()
+        if self.tokens[-1] == ASSIGNMENT_TOKEN:
+            # Гарантируем наличие правой части выражения
+            raise WrongExpressionError()
         identifier_type, identifier_full_name = self.analyze_left_part()
 
     def analyze_left_part(self):

@@ -59,3 +59,7 @@ class AssignmentExpectedError(BaseAnalyzerException):
 
 class UnknownFieldError(BaseAnalyzerException):
     msg = 'Неизвестное поле'
+
+
+class WrongExpressionError(BaseAnalyzerException):
+    msg = 'Неверное выражение'
