@@ -51,3 +51,11 @@ class BlockVarDefExpectedError(BaseAnalyzerException):
 
 class EndBlockVarDefExpectedError(BaseAnalyzerException):
     msg = 'Ожидалось окончание блока объявление идентификаторов'
+
+
+class AssignmentExpectedError(BaseAnalyzerException):
+    msg = 'Ожидался ровно 1 знак присвоения'
+
+
+class UnknownFieldError(BaseAnalyzerException):
+    msg = 'Неизвестное поле'
