@@ -10,7 +10,6 @@ from tokens import (
     EQUAL_TOKEN, NOT_EQUAL_TOKEN, LESS_TOKEN, MORE_TOKEN, LESS_EQUAL_TOKEN, MORE_EQUAL_TOKEN,
     ASSIGNMENT_TOKEN,
     TRUE_TOKEN, FALSE_TOKEN,
-    identifiers_table
 )
 from .custom_exceptions import (
     IdentifierRedeclarationException, TabExpectedException, NewLineExpectedException, TypeNameExpectedException,
@@ -18,8 +17,6 @@ from .custom_exceptions import (
     VarNameExpectedError, AnalysisException, FieldRedeclarationError, WrongTokenError,
 )
 from .expression_analyzer import ExpressionAnalyzer
-
-identifiers_table = identifiers_table
 
 
 class SyntacticalAnalyzer(object):
@@ -83,8 +80,8 @@ class SyntacticalAnalyzer(object):
 
         # Очистим таблицу идентификатором от идентификаторов без категории.
         # Такие могли появиться из-за того, что поля класса вносились в таблицу идентификаторов
-        global identifiers_table
-        identifiers_table = list(filter(lambda x: x.category is not None, identifiers_table))
+        # global identifiers_table
+        # identifiers_table = list(filter(lambda x: x.category is not None, identifiers_table))
         # endregion
 
         self._clean_nl_tokens()

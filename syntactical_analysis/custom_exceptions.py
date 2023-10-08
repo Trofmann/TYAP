@@ -61,6 +61,10 @@ class UnknownFieldError(BaseAnalyzerException):
     msg = 'Неизвестное поле'
 
 
+class UnknownVarError(BaseAnalyzerException):
+    msg = 'Неизвестная переменная'
+
+
 class WrongExpressionError(BaseAnalyzerException):
     msg = 'Неверное выражение'
 

@@ -7,7 +7,7 @@ from tokens import (
 )
 from .custom_exceptions import (
     WrongTokenError, AssignmentExpectedError, UnknownFieldError, WrongExpressionError, TypeIncompatibilityError,
-    RelationCountError
+    RelationCountError, UnknownVarError, VarNameExpectedError
 )
 from .identifier_info import IdentifierInfo
 
@@ -51,11 +51,16 @@ class ExpressionAnalyzer(object):
                 if next_token in [POINT_TOKEN, ASSIGNMENT_TOKEN]:
                     # Всё хорошо
                     if identifier is None:
+                        if not token.category:
+                            # Категории нет, значит переменная неизвестная
+                            raise UnknownVarError()
+                        if token.category == IdentifierToken.CATEGORY_TYPE:
+                            raise VarNameExpectedError()
                         # Ещё не было идентификатора. Значит запомним этот
                         identifier = token
                         full_name += identifier.attr_name
                     else:
-                        # Уже был. Значит в его полях ищем идентификатор с там же именем
+                        # Уже был. Значит в его полях ищем идентификатор с таким же именем
                         found = False
                         for field in identifier.fields:
                             if field.attr_name == token.attr_name:
