@@ -7,7 +7,7 @@ from tokens import (
 )
 from .custom_exceptions import (
     WrongTokenError, AssignmentExpectedError, UnknownFieldError, WrongExpressionError, TypeIncompatibilityError,
-    RelationCountError, UnknownVarError, VarNameExpectedError
+    RelationCountError, UnknownVarError, VarNameExpectedError, AnalysisException
 )
 from .identifier_info import IdentifierInfo
 
@@ -19,7 +19,64 @@ __all__ = [
 class ExpressionAnalyzer(object):
     def __init__(self, tokens):
         self.tokens = tokens
+        self.parse_identifiers()
         self.analyze()
+
+    def parse_identifiers(self):
+        """Схлопываем идентификаторы"""
+        result = []
+        identifier = None
+        full_name = ''
+        for ind in range(len(self.tokens)):
+            token = self.tokens[ind]
+            if isinstance(token, IdentifierToken):
+                # Встретили идентификатор
+                if identifier is None:
+                    if not token.category:
+                        raise UnknownVarError()
+                    if token.category == IdentifierToken.CATEGORY_TYPE:
+                        raise VarNameExpectedError()
+                    identifier = token
+                    full_name += identifier.attr_name
+                else:
+                    prev_token = self.tokens[ind - 1]
+                    if prev_token == POINT_TOKEN:
+                        # Предыдущая точка, всё хорошо
+                        found = False
+                        for field in identifier.fields:
+                            if field.attr_name == token.attr_name:
+                                identifier = field
+                                full_name = full_name + '.' + token.attr_name
+                                found = True
+                        if not found:
+                            raise UnknownFieldError()
+                    else:
+                        raise AnalysisException()
+            elif token == POINT_TOKEN:
+                # Встретили точку
+                # А значит предыдущий только идентификатор, и следующий идентификатор
+                if ind == len(self.tokens):
+                    raise AnalysisException()
+                next_token = self.tokens[ind + 1]
+                prev_token = self.tokens[ind - 1]
+                if isinstance(next_token, IdentifierToken) and (prev_token, IdentifierToken):
+                    # Всё хорошо
+                    pass
+                else:
+                    raise WrongTokenError()
+            else:
+                # Встретили другой токен.
+                if identifier:
+                    # Если есть идентификатор, сбросим его в result
+                    identifier_info = IdentifierInfo(full_name=full_name, type=identifier.type)
+                    result.append(identifier_info)
+                    identifier = None
+                    full_name = ''
+                result.append(token)
+        if identifier:
+            identifier_info = IdentifierInfo(full_name=full_name, type=identifier.type)
+            result.append(identifier_info)
+        self.tokens = result
 
     def analyze(self):
         if self.tokens.count(ASSIGNMENT_TOKEN) != 1:
@@ -28,61 +85,11 @@ class ExpressionAnalyzer(object):
         if self.tokens[-1] == ASSIGNMENT_TOKEN:
             # Гарантируем наличие правой части выражения
             raise WrongExpressionError()
-        identifier_info = self.analyze_left_part()
         # Если дошли досюда, значит с левой частью всё норм. Можно схлопнуть
         assignment_index = self.tokens.index(ASSIGNMENT_TOKEN)
+        left_identifier = self.tokens[0]
         self.tokens = self.tokens[assignment_index::]
-        self.tokens.insert(0, identifier_info)
-        self.analyze_right_part(type_=identifier_info.type)
-
-    def analyze_left_part(self):
-        """Анализ левой части выражения"""
-        # Индекс присвоения. Всё, что слева - или идентификаторы, или точка
-        assignment_index = self.tokens.index(ASSIGNMENT_TOKEN)
-        # Конечный идентификатор
-        identifier = None
-        full_name = ''
-        for ind in range(assignment_index):
-            token = self.tokens[ind]
-            if isinstance(token, IdentifierToken):
-                # Встретили идентификатор
-                # Следующий токен или присвоение, или точка
-                next_token = self.tokens[ind + 1]
-                if next_token in [POINT_TOKEN, ASSIGNMENT_TOKEN]:
-                    # Всё хорошо
-                    if identifier is None:
-                        if not token.category:
-                            # Категории нет, значит переменная неизвестная
-                            raise UnknownVarError()
-                        if token.category == IdentifierToken.CATEGORY_TYPE:
-                            raise VarNameExpectedError()
-                        # Ещё не было идентификатора. Значит запомним этот
-                        identifier = token
-                        full_name += identifier.attr_name
-                    else:
-                        # Уже был. Значит в его полях ищем идентификатор с таким же именем
-                        found = False
-                        for field in identifier.fields:
-                            if field.attr_name == token.attr_name:
-                                identifier = field
-                                full_name = full_name + '.' + token.attr_name
-                                found = True
-                        if not found:
-                            # Не нашли, а должны были
-                            raise UnknownFieldError()
-
-                else:
-                    raise WrongTokenError()
-            elif token == POINT_TOKEN:
-                # Встретили точку, а значит следующий - только идентификатор
-                next_token = self.tokens[ind + 1]
-                if isinstance(next_token, IdentifierToken):
-                    # Всё хорошо
-                    pass
-                else:
-                    raise WrongTokenError()
-        # Вернём тип идентификатора и его полное имя
-        return IdentifierInfo(full_name, identifier.type)
+        self.analyze_right_part(type_=left_identifier.type)
 
     def analyze_right_part(self, type_):
         """Анализ правой части выражения"""
