@@ -15,5 +15,5 @@ class NotOperationHandler(object):
     @classmethod
     def __generate_commands(cls, temp_var_name, identifier_name):
         AssignmentCommand.create(temp_var_name, 'True')
-        cond_command = ConditionCommand.create(cond=identifier_name, goto_command_ind=len(commands) + 2)
+        ConditionCommand.create(cond=identifier_name, goto_command_ind=len(commands) + 2)
         AssignmentCommand.create(temp_var_name, 'False')
