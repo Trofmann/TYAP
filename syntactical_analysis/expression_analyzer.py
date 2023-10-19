@@ -17,6 +17,8 @@ __all__ = [
     'ExpressionAnalyzer',
 ]
 
+from .temp_var import TempVar
+
 
 class ExpressionAnalyzer(object):
     def __init__(self, tokens):
@@ -131,6 +133,8 @@ class ExpressionAnalyzer(object):
         while NOT_TOKEN in tokens:
             not_token_index = tokens.index(NOT_TOKEN)
             identifier = tokens[not_token_index + 1]  # Берем следующий
+            if not isinstance(identifier, (IdentifierToken, IdentifierInfo, TempVar)):
+                raise WrongExpressionError()
             if identifier.type != BOOL:
                 raise WrongTypeForOperator()
 
