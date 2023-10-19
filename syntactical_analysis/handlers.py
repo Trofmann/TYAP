@@ -36,3 +36,20 @@ class AndOperationHandler(object):
         GotoCommand.create(next_command_ind=commands_len + 6)
         ConditionCommand.create(cond=right_identifier_name, goto_command_ind=commands_len + 6)
         AssignmentCommand.create(temp_var_name, 'False')
+
+
+class OrOperationHandler(object):
+    @classmethod
+    def handle(cls, left_identifier_name: str, right_identifier_name: str):
+        temp_var = TempVar(type_=BOOL)
+        cls.__generate_commands(temp_var.name, left_identifier_name, right_identifier_name)
+        return temp_var
+
+    @classmethod
+    def __generate_commands(cls, temp_var_name: str, left_identifier_name: str, right_identifier_name: str):
+        commands_len = len(commands)
+
+        AssignmentCommand.create(temp_var_name, 'True')
+        ConditionCommand.create(cond=left_identifier_name, goto_command_ind=commands_len + 4)
+        ConditionCommand.create(cond=right_identifier_name, goto_command_ind=commands_len + 4)
+        AssignmentCommand.create(temp_var_name, 'False')

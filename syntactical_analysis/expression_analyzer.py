@@ -10,7 +10,7 @@ from .custom_exceptions import (
     RelationCountError, UnknownVarError, VarNameExpectedError, AnalysisException, WrongTypeForOperator
 )
 from .identifier_info import IdentifierInfo
-from .handlers import NotOperationHandler, AndOperationHandler
+from .handlers import NotOperationHandler, AndOperationHandler, OrOperationHandler
 
 __all__ = [
     'ExpressionAnalyzer',
@@ -167,3 +167,25 @@ class ExpressionAnalyzer(object):
                 tokens = tokens[0:and_token_index - 1] + [temp_var]
             else:
                 tokens = tokens[0:and_token_index - 1] + [temp_var] + tokens[and_token_index + 2::]
+
+        while OR_TOKEN in tokens:
+            or_token_index = tokens.index(OR_TOKEN)
+            left_identifier = tokens[or_token_index - 1]  # Берём предыдущий
+            right_identifier = tokens[or_token_index + 1]  # Берём следующий
+
+            if not (
+                    isinstance(left_identifier, identifiers_classes) and
+                    isinstance(right_identifier, identifiers_classes)
+            ):
+                raise WrongExpressionError()
+            if not (left_identifier.type == BOOL and right_identifier.type == BOOL):
+                raise WrongTypeForOperator()
+
+            temp_var = OrOperationHandler.handle(
+                left_identifier_name=left_identifier.name,
+                right_identifier_name=right_identifier.name
+            )
+            if or_token_index + 1 == len(tokens) - 1:
+                tokens = tokens[0:or_token_index - 1] + [temp_var]
+            else:
+                tokens = tokens[0:or_token_index - 1] + [temp_var] + tokens[or_token_index + 2::]

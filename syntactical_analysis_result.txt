@@ -5,20 +5,24 @@ goto 6
 if f goto 6
 $1 = False
 $2 = True
-if e goto 9
+if e goto 10
+if f goto 10
 $2 = False
 $3 = True
-if f goto 12
+if e goto 13
 $3 = False
 $4 = True
-if e goto 16
-$4 = False
-goto 18
-if $3 goto 18
+if f goto 16
 $4 = False
 $5 = True
+if e goto 20
+$5 = False
+goto 22
 if $4 goto 22
 $5 = False
-goto 24
-if e goto 24
-$5 = False
+$6 = True
+if $5 goto 26
+$6 = False
+goto 28
+if e goto 28
+$6 = False
