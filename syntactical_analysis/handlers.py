@@ -88,3 +88,9 @@ class RelationOperationHandler(object):
             cond=f'{left_identifier_name}{operation}{right_identifier_name}', goto_command_ind=commands_len + 3
         )
         AssignmentCommand.create(temp_var_name, 'False')
+
+
+class AssignmentHandler(object):
+    @classmethod
+    def handle(cls, left_identifier_name: str, right_identifier_name: str):
+        AssignmentCommand.create(left_identifier_name, right_identifier_name)

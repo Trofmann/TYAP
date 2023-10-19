@@ -9,16 +9,16 @@ from .custom_exceptions import (
     WrongTokenError, AssignmentExpectedError, UnknownFieldError, WrongExpressionError, TypeIncompatibilityError,
     RelationCountError, UnknownVarError, VarNameExpectedError, AnalysisException, WrongTypeForOperator
 )
-from .identifier_info import IdentifierInfo
 from .handlers import (
-    NotOperationHandler, AndOperationHandler, OrOperationHandler, ArithmeticOperationHandler, RelationOperationHandler
+    NotOperationHandler, AndOperationHandler, OrOperationHandler, ArithmeticOperationHandler, RelationOperationHandler,
+    AssignmentHandler
 )
+from .identifier_info import IdentifierInfo
+from .temp_var import TempVar
 
 __all__ = [
     'ExpressionAnalyzer',
 ]
-
-from .temp_var import TempVar
 
 
 class ExpressionAnalyzer(object):
@@ -94,7 +94,14 @@ class ExpressionAnalyzer(object):
         assignment_index = self.tokens.index(ASSIGNMENT_TOKEN)
         left_identifier = self.tokens[0]
         self.tokens = self.tokens[assignment_index::]
-        self.analyze_right_part(type_=left_identifier.type)
+        right_part_identifier = self.analyze_right_part(type_=left_identifier.type)
+
+        # На всякий случай проверим типы
+        if right_part_identifier.type != left_identifier.type:
+            raise TypeIncompatibilityError()
+        AssignmentHandler.handle(
+            left_identifier_name=left_identifier.name, right_identifier_name=right_part_identifier.name
+        )
 
     def analyze_right_part(self, type_):
         """Анализ правой части выражения"""
