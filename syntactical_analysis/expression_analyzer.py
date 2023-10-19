@@ -10,7 +10,9 @@ from .custom_exceptions import (
     RelationCountError, UnknownVarError, VarNameExpectedError, AnalysisException, WrongTypeForOperator
 )
 from .identifier_info import IdentifierInfo
-from .handlers import NotOperationHandler, AndOperationHandler, OrOperationHandler, ArithmeticOperationHandler
+from .handlers import (
+    NotOperationHandler, AndOperationHandler, OrOperationHandler, ArithmeticOperationHandler, RelationOperationHandler
+)
 
 __all__ = [
     'ExpressionAnalyzer',
@@ -264,3 +266,55 @@ class ExpressionAnalyzer(object):
                 tokens = tokens[0:token_index - 1] + [temp_var]
             else:
                 tokens = tokens[0:token_index - 1] + [temp_var] + tokens[token_index + 2::]
+
+        if relation_count == 1:
+            token = None
+            operation = ''
+            if EQUAL_TOKEN in tokens:
+                token = EQUAL_TOKEN
+                operation = '=='
+            elif NOT_EQUAL_TOKEN in tokens:
+                token = NOT_EQUAL_TOKEN
+                operation = '!='
+            elif LESS_TOKEN in tokens:
+                token = LESS_TOKEN
+                operation = '<'
+            elif LESS_EQUAL_TOKEN in tokens:
+                token = LESS_EQUAL_TOKEN
+                operation = '<='
+            elif MORE_TOKEN in tokens:
+                token = MORE_TOKEN
+                operation = '>'
+            elif MORE_EQUAL_TOKEN in tokens:
+                token = MORE_EQUAL_TOKEN
+                operation = '>='
+
+            rel_token_index = tokens.index(token)
+
+            left_identifier = tokens[rel_token_index - 1]
+            right_identifier = tokens[rel_token_index + 1]
+
+            if not (
+                    isinstance(left_identifier, identifiers_classes) and
+                    isinstance(right_identifier, identifiers_classes)
+            ):
+                raise WrongExpressionError()
+
+            if left_identifier.type != right_identifier.type:
+                raise TypeIncompatibilityError()
+
+            temp_var = RelationOperationHandler.handle(
+                left_identifier_name=left_identifier.name,
+                right_identifier_name=right_identifier.name,
+                operation=operation,
+                type_=left_identifier.type
+            )
+            if rel_token_index + 1 == len(tokens) - 1:
+                tokens = tokens[0:rel_token_index - 1] + [temp_var]
+            else:
+                tokens = tokens[0:rel_token_index - 1] + [temp_var] + tokens[rel_token_index + 2::]
+
+        # К этому моменту справа должен остаться только 1 токен
+        if len(tokens) != 1:
+            raise WrongExpressionError()
+        return tokens[0]
