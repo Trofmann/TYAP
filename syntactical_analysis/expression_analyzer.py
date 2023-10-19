@@ -10,8 +10,7 @@ from .custom_exceptions import (
     RelationCountError, UnknownVarError, VarNameExpectedError, AnalysisException, WrongTypeForOperator
 )
 from .identifier_info import IdentifierInfo
-from .handlers import NotOperationHandler
-from .commands import commands
+from .handlers import NotOperationHandler, AndOperationHandler
 
 __all__ = [
     'ExpressionAnalyzer',
@@ -99,6 +98,7 @@ class ExpressionAnalyzer(object):
         """Анализ правой части выражения"""
         assignment_index = self.tokens.index(ASSIGNMENT_TOKEN)
         tokens = self.tokens[assignment_index::]
+        identifiers_classes = (IdentifierToken, IdentifierInfo, TempVar)
 
         # region Проверка 1: Операции сравнения, логические операции, true и false
         # допустимы, только если левая часть логического типа
@@ -133,7 +133,7 @@ class ExpressionAnalyzer(object):
         while NOT_TOKEN in tokens:
             not_token_index = tokens.index(NOT_TOKEN)
             identifier = tokens[not_token_index + 1]  # Берем следующий
-            if not isinstance(identifier, (IdentifierToken, IdentifierInfo, TempVar)):
+            if not isinstance(identifier, identifiers_classes):
                 raise WrongExpressionError()
             if identifier.type != BOOL:
                 raise WrongTypeForOperator()
@@ -145,3 +145,25 @@ class ExpressionAnalyzer(object):
                 tokens = tokens[0:not_token_index] + [temp_var]
             else:
                 tokens = tokens[0:not_token_index] + [temp_var] + tokens[not_token_index + 2::]
+
+        while AND_TOKEN in tokens:
+            and_token_index = tokens.index(AND_TOKEN)
+            left_identifier = tokens[and_token_index - 1]  # Берём предыдущий
+            right_identifier = tokens[and_token_index + 1]  # Берём следующий
+
+            if not (
+                    isinstance(left_identifier, identifiers_classes) and
+                    isinstance(right_identifier, identifiers_classes)
+            ):
+                raise WrongExpressionError()
+            if not (left_identifier.type == BOOL and right_identifier.type == BOOL):
+                raise WrongTypeForOperator()
+
+            temp_var = AndOperationHandler.handle(
+                left_identifier_name=left_identifier.name,
+                right_identifier_name=right_identifier.name
+            )
+            if and_token_index + 1 == len(tokens) - 1:
+                tokens = tokens[0:and_token_index - 1] + [temp_var]
+            else:
+                tokens = tokens[0:and_token_index - 1] + [temp_var] + tokens[and_token_index + 2::]

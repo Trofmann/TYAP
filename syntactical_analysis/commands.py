@@ -26,4 +26,17 @@ class ConditionCommand(object):
         return f'if {self.cond} goto {self.goto_command_ind}'
 
 
+class GotoCommand(object):
+    def __init__(self, next_command_ind: int):
+        self.next_command_ind = next_command_ind
+
+    @classmethod
+    def create(cls, next_command_ind: int = None):
+        command = cls(next_command_ind)
+        commands.append(command)
+
+    def __str__(self):
+        return f'goto {self.next_command_ind}'
+
+
 commands = []
