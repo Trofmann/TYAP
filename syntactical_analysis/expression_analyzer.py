@@ -1,9 +1,9 @@
 from lexical_analysis.const import BOOL, INT, FLOAT
 from tokens import (
-    IdentifierToken,
+    IdentifierToken, DigitalConstToken,
     ASSIGNMENT_TOKEN, POINT_TOKEN,
     EQUAL_TOKEN, NOT_EQUAL_TOKEN, LESS_TOKEN, LESS_EQUAL_TOKEN, MORE_TOKEN, MORE_EQUAL_TOKEN,
-    AND_TOKEN, OR_TOKEN, NOT_TOKEN, TRUE_TOKEN, FALSE_TOKEN, MULT_TOKEN, DIV_TOKEN, PLUS_TOKEN, MINUS_TOKEN
+    AND_TOKEN, OR_TOKEN, NOT_TOKEN, TRUE_TOKEN, FALSE_TOKEN, MULT_TOKEN, DIV_TOKEN, PLUS_TOKEN, MINUS_TOKEN,
 )
 from .custom_exceptions import (
     WrongTokenError, AssignmentExpectedError, UnknownFieldError, WrongExpressionError, TypeIncompatibilityError,
@@ -103,8 +103,13 @@ class ExpressionAnalyzer(object):
         # На всякий случай проверим типы
         if left_identifier.type != right_part_type:
             raise TypeIncompatibilityError()
+
+        if isinstance(right_part_identifier, DigitalConstToken):
+            right_part_identifier_name = str(right_part_identifier.attr)
+        else:
+            right_part_identifier_name = right_part_identifier.name
         AssignmentHandler.handle(
-            left_identifier_name=left_identifier.name, right_identifier_name=right_part_identifier.name
+            left_identifier_name=left_identifier.name, right_identifier_name=right_part_identifier_name
         )
 
     def analyze_right_part(self, type_):
@@ -112,6 +117,7 @@ class ExpressionAnalyzer(object):
         assignment_index = self.tokens.index(ASSIGNMENT_TOKEN)
         tokens = self.tokens[assignment_index::]
         identifiers_classes = (IdentifierToken, IdentifierInfo, TempVar)
+        arithmetical_identifiers_classes = (IdentifierToken, IdentifierInfo, TempVar, DigitalConstToken)
         arithmetic_types = [INT, FLOAT]
 
         # region Проверка 1: Операции сравнения, логические операции, true и false
@@ -219,8 +225,8 @@ class ExpressionAnalyzer(object):
             right_identifier = tokens[token_index + 1]  # Берём следующий
 
             if not (
-                    isinstance(left_identifier, identifiers_classes) and
-                    isinstance(right_identifier, identifiers_classes)
+                    isinstance(left_identifier, arithmetical_identifiers_classes) and
+                    isinstance(right_identifier, arithmetical_identifiers_classes)
             ):
                 raise WrongExpressionError()
             if not (left_identifier.type in arithmetic_types and right_identifier.type in arithmetic_types):
@@ -229,9 +235,19 @@ class ExpressionAnalyzer(object):
             if left_identifier.type != right_identifier.type:
                 raise TypeIncompatibilityError()
 
+            if isinstance(left_identifier, DigitalConstToken):
+                left_identifier_name = str(left_identifier.attr)
+            else:
+                left_identifier_name = left_identifier.name
+
+            if isinstance(right_identifier, DigitalConstToken):
+                right_identifier_name = str(right_identifier.attr)
+            else:
+                right_identifier_name = right_identifier.name
+
             temp_var = ArithmeticOperationHandler.handle(
-                left_identifier_name=left_identifier.name,
-                right_identifier_name=right_identifier.name,
+                left_identifier_name=left_identifier_name,
+                right_identifier_name=right_identifier_name,
                 operation=operation,
                 type_=left_identifier.type
             )
@@ -256,8 +272,8 @@ class ExpressionAnalyzer(object):
             right_identifier = tokens[token_index + 1]  # Берём следующий
 
             if not (
-                    isinstance(left_identifier, identifiers_classes) and
-                    isinstance(right_identifier, identifiers_classes)
+                    isinstance(left_identifier, arithmetical_identifiers_classes) and
+                    isinstance(right_identifier, arithmetical_identifiers_classes)
             ):
                 raise WrongExpressionError()
             if not (left_identifier.type in arithmetic_types and right_identifier.type in arithmetic_types):
@@ -266,9 +282,19 @@ class ExpressionAnalyzer(object):
             if left_identifier.type != right_identifier.type:
                 raise TypeIncompatibilityError()
 
+            if isinstance(left_identifier, DigitalConstToken):
+                left_identifier_name = str(left_identifier.attr)
+            else:
+                left_identifier_name = left_identifier.name
+
+            if isinstance(right_identifier, DigitalConstToken):
+                right_identifier_name = str(right_identifier.attr)
+            else:
+                right_identifier_name = right_identifier.name
+
             temp_var = ArithmeticOperationHandler.handle(
-                left_identifier_name=left_identifier.name,
-                right_identifier_name=right_identifier.name,
+                left_identifier_name=left_identifier_name,
+                right_identifier_name=right_identifier_name,
                 operation=operation,
                 type_=left_identifier.type
             )
@@ -306,8 +332,8 @@ class ExpressionAnalyzer(object):
             right_identifier = tokens[rel_token_index + 1]
 
             if not (
-                    isinstance(left_identifier, identifiers_classes) and
-                    isinstance(right_identifier, identifiers_classes)
+                    isinstance(left_identifier, arithmetical_identifiers_classes) and
+                    isinstance(right_identifier, arithmetical_identifiers_classes)
             ):
                 raise WrongExpressionError()
 
