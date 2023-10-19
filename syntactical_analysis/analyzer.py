@@ -17,6 +17,7 @@ from .custom_exceptions import (
     VarNameExpectedError, AnalysisException, FieldRedeclarationError, WrongTokenError,
 )
 from .expression_analyzer import ExpressionAnalyzer
+from .commands import commands
 
 
 class SyntacticalAnalyzer(object):
@@ -24,6 +25,10 @@ class SyntacticalAnalyzer(object):
 
     def __init__(self, tokens: List[Token]):
         self.tokens = tokens
+
+    def write(self, filename='syntactical_analysis_result.txt'):
+        with open(filename, 'w') as f:
+            f.write('\n'.join(map(str, commands)))
 
     @staticmethod
     def _add_identifier_category(token: IdentifierToken, category, type_token=None):

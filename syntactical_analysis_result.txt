@@ -1,0 +1,6 @@
+$1 = True
+if e goto 3
+$1 = False
+$2 = True
+if f goto 6
+$2 = False
