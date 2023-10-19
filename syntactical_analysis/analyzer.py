@@ -75,7 +75,7 @@ class SyntacticalAnalyzer(object):
         self.tokens.pop(0)  # Удалим block_var_def
         self._clean_nl_tokens()
         self.tokens.insert(0, NL_TOKEN)  # Хак для удобства
-        endblock_var_def_index = self.var_definition()
+        endblock_var_def_index = self._var_definition()
         self.tokens = self.tokens[endblock_var_def_index + 1::]
 
         # Очистим таблицу идентификатором от идентификаторов без категории.
@@ -144,7 +144,7 @@ class SyntacticalAnalyzer(object):
             else:
                 raise AnalysisException()
 
-    def var_definition(self):
+    def _var_definition(self):
         """Разбор блока описания переменных"""
         endblock_var_def_index = None  # Индекс токена окончания блока описания переменных (endblock_var_def)
 
