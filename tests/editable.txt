@@ -32,7 +32,7 @@ res_add = c + d
 res_sub = c - d
 { А это
 многострочный комментарий }
-res_and = e and f
+res_and = True and e and f
 res_or = e or f
 res_not = not e
 res_not = e and not f and e

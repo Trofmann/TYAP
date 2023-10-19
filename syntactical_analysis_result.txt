@@ -13,37 +13,43 @@ res_add = $3
 $4 = c - d
 res_sub = $4
 $5 = True
-if e goto 18
+if True goto 18
 $5 = False
 goto 20
-if f goto 20
+if e goto 20
 $5 = False
-res_and = $5
 $6 = True
-if e goto 25
-if f goto 25
+if $5 goto 24
 $6 = False
-res_or = $6
+goto 26
+if f goto 26
+$6 = False
+res_and = $6
 $7 = True
-if e goto 29
+if e goto 31
+if f goto 31
 $7 = False
-res_not = $7
+res_or = $7
 $8 = True
-if f goto 33
+if e goto 35
 $8 = False
+res_not = $8
 $9 = True
-if e goto 37
-$9 = False
-goto 39
-if $8 goto 39
+if f goto 39
 $9 = False
 $10 = True
-if $9 goto 43
+if e goto 43
 $10 = False
 goto 45
-if e goto 45
+if $9 goto 45
 $10 = False
-res_not = $10
+$11 = True
+if $10 goto 49
+$11 = False
+goto 51
+if e goto 51
+$11 = False
+res_not = $11
 class_var1.class_int = 5
-$11 = class_var1.class_int + 1
-class_var2.class_int = $11
+$12 = class_var1.class_int + 1
+class_var2.class_int = $12

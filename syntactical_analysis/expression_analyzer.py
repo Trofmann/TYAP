@@ -116,9 +116,11 @@ class ExpressionAnalyzer(object):
         """Анализ правой части выражения"""
         assignment_index = self.tokens.index(ASSIGNMENT_TOKEN)
         tokens = self.tokens[assignment_index::]
+
         identifiers_classes = (IdentifierToken, IdentifierInfo, TempVar)
         arithmetical_identifiers_classes = (IdentifierToken, IdentifierInfo, TempVar, DigitalConstToken)
         arithmetic_types = [INT, FLOAT]
+        bool_tokens = [TRUE_TOKEN, FALSE_TOKEN]
 
         # region Проверка 1: Операции сравнения, логические операции, true и false
         # допустимы, только если левая часть логического типа
@@ -153,9 +155,13 @@ class ExpressionAnalyzer(object):
         while NOT_TOKEN in tokens:
             not_token_index = tokens.index(NOT_TOKEN)
             identifier = tokens[not_token_index + 1]  # Берем следующий
-            if not isinstance(identifier, identifiers_classes):
+            if not (isinstance(identifier, identifiers_classes) or identifier in bool_tokens):
                 raise WrongExpressionError()
-            if identifier.type != BOOL:
+            if identifier in bool_tokens:
+                identifier_type = BOOL
+            else:
+                identifier_type = identifier.type
+            if identifier_type != BOOL:
                 raise WrongTypeForOperator()
 
             identifier_name = identifier.name
@@ -172,11 +178,22 @@ class ExpressionAnalyzer(object):
             right_identifier = tokens[and_token_index + 1]  # Берём следующий
 
             if not (
-                    isinstance(left_identifier, identifiers_classes) and
-                    isinstance(right_identifier, identifiers_classes)
+                    (isinstance(left_identifier, identifiers_classes) or left_identifier in bool_tokens) and
+                    (isinstance(right_identifier, identifiers_classes) or right_identifier in bool_tokens)
             ):
                 raise WrongExpressionError()
-            if not (left_identifier.type == BOOL and right_identifier.type == BOOL):
+
+            if left_identifier in bool_tokens:
+                left_identifier_type = BOOL
+            else:
+                left_identifier_type = left_identifier.type
+
+            if right_identifier in bool_tokens:
+                right_identifier_type = BOOL
+            else:
+                right_identifier_type = right_identifier.type
+
+            if not (left_identifier_type == BOOL and right_identifier_type == BOOL):
                 raise WrongTypeForOperator()
 
             temp_var = AndOperationHandler.handle(
@@ -194,11 +211,22 @@ class ExpressionAnalyzer(object):
             right_identifier = tokens[or_token_index + 1]  # Берём следующий
 
             if not (
-                    isinstance(left_identifier, identifiers_classes) and
-                    isinstance(right_identifier, identifiers_classes)
+                    (isinstance(left_identifier, identifiers_classes) or left_identifier in bool_tokens) and
+                    (isinstance(right_identifier, identifiers_classes) or right_identifier in bool_tokens)
             ):
                 raise WrongExpressionError()
-            if not (left_identifier.type == BOOL and right_identifier.type == BOOL):
+
+            if left_identifier in bool_tokens:
+                left_identifier_type = BOOL
+            else:
+                left_identifier_type = left_identifier.type
+
+            if right_identifier in bool_tokens:
+                right_identifier_type = BOOL
+            else:
+                right_identifier_type = right_identifier.type
+
+            if not (left_identifier_type == BOOL and right_identifier_type == BOOL):
                 raise WrongTypeForOperator()
 
             temp_var = OrOperationHandler.handle(
