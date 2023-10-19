@@ -96,8 +96,12 @@ class ExpressionAnalyzer(object):
         self.tokens = self.tokens[assignment_index::]
         right_part_identifier = self.analyze_right_part(type_=left_identifier.type)
 
+        if right_part_identifier in [TRUE_TOKEN, FALSE_TOKEN]:
+            right_part_type = BOOL
+        else:
+            right_part_type = right_part_identifier.type
         # На всякий случай проверим типы
-        if right_part_identifier.type != left_identifier.type:
+        if left_identifier.type != right_part_type:
             raise TypeIncompatibilityError()
         AssignmentHandler.handle(
             left_identifier_name=left_identifier.name, right_identifier_name=right_part_identifier.name
@@ -321,6 +325,11 @@ class ExpressionAnalyzer(object):
             else:
                 tokens = tokens[0:rel_token_index - 1] + [temp_var] + tokens[rel_token_index + 2::]
 
+        # Удалим токен присвоения, его обработаем потом
+        if len(tokens) and tokens[0] == ASSIGNMENT_TOKEN:
+            tokens.pop(0)
+        else:
+            raise WrongExpressionError()
         # К этому моменту справа должен остаться только 1 токен
         if len(tokens) != 1:
             raise WrongExpressionError()
