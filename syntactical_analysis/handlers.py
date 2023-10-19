@@ -53,3 +53,18 @@ class OrOperationHandler(object):
         ConditionCommand.create(cond=left_identifier_name, goto_command_ind=commands_len + 4)
         ConditionCommand.create(cond=right_identifier_name, goto_command_ind=commands_len + 4)
         AssignmentCommand.create(temp_var_name, 'False')
+
+
+class ArithmeticOperationHandler(object):
+    @classmethod
+    def handle(cls, left_identifier_name: str, right_identifier_name: str, operation: str, type_: str):
+        temp_var = TempVar(type_=type_)
+        cls.__generate_commands(temp_var.name, left_identifier_name, right_identifier_name, operation)
+        return temp_var
+
+    @classmethod
+    def __generate_commands(
+            cls, temp_var_name: str, left_identifier_name: str, right_identifier_name: str, operation: str
+    ):
+        source = f'{left_identifier_name} {operation} {right_identifier_name}'
+        AssignmentCommand.create(temp_var_name, source)

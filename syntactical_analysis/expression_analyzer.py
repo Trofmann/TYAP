@@ -1,16 +1,16 @@
-from lexical_analysis.const import BOOL
+from lexical_analysis.const import BOOL, INT, FLOAT
 from tokens import (
     IdentifierToken,
     ASSIGNMENT_TOKEN, POINT_TOKEN,
     EQUAL_TOKEN, NOT_EQUAL_TOKEN, LESS_TOKEN, LESS_EQUAL_TOKEN, MORE_TOKEN, MORE_EQUAL_TOKEN,
-    AND_TOKEN, OR_TOKEN, NOT_TOKEN, TRUE_TOKEN, FALSE_TOKEN,
+    AND_TOKEN, OR_TOKEN, NOT_TOKEN, TRUE_TOKEN, FALSE_TOKEN, MULT_TOKEN, DIV_TOKEN, PLUS_TOKEN, MINUS_TOKEN
 )
 from .custom_exceptions import (
     WrongTokenError, AssignmentExpectedError, UnknownFieldError, WrongExpressionError, TypeIncompatibilityError,
     RelationCountError, UnknownVarError, VarNameExpectedError, AnalysisException, WrongTypeForOperator
 )
 from .identifier_info import IdentifierInfo
-from .handlers import NotOperationHandler, AndOperationHandler, OrOperationHandler
+from .handlers import NotOperationHandler, AndOperationHandler, OrOperationHandler, ArithmeticOperationHandler
 
 __all__ = [
     'ExpressionAnalyzer',
@@ -99,6 +99,7 @@ class ExpressionAnalyzer(object):
         assignment_index = self.tokens.index(ASSIGNMENT_TOKEN)
         tokens = self.tokens[assignment_index::]
         identifiers_classes = (IdentifierToken, IdentifierInfo, TempVar)
+        arithmetic_types = [INT, FLOAT]
 
         # region Проверка 1: Операции сравнения, логические операции, true и false
         # допустимы, только если левая часть логического типа
@@ -189,3 +190,77 @@ class ExpressionAnalyzer(object):
                 tokens = tokens[0:or_token_index - 1] + [temp_var]
             else:
                 tokens = tokens[0:or_token_index - 1] + [temp_var] + tokens[or_token_index + 2::]
+
+        while (MULT_TOKEN in tokens) or (DIV_TOKEN in tokens):
+            mult_token_index = float('inf')
+            div_token_index = float('inf')
+
+            if MULT_TOKEN in tokens:
+                mult_token_index = tokens.index(MULT_TOKEN)
+            if DIV_TOKEN in tokens:
+                div_token_index = tokens.index(DIV_TOKEN)
+
+            token_index = min(mult_token_index, div_token_index)  # Операции равного приоритета. Возьмём самый первый
+            operation = '*' if token_index == mult_token_index else '/'
+            left_identifier = tokens[token_index - 1]  # Берём предыдущий
+            right_identifier = tokens[token_index + 1]  # Берём следующий
+
+            if not (
+                    isinstance(left_identifier, identifiers_classes) and
+                    isinstance(right_identifier, identifiers_classes)
+            ):
+                raise WrongExpressionError()
+            if not (left_identifier.type in arithmetic_types and right_identifier.type in arithmetic_types):
+                raise WrongTypeForOperator()
+
+            if left_identifier.type != right_identifier.type:
+                raise TypeIncompatibilityError()
+
+            temp_var = ArithmeticOperationHandler.handle(
+                left_identifier_name=left_identifier.name,
+                right_identifier_name=right_identifier.name,
+                operation=operation,
+                type_=left_identifier.type
+            )
+
+            if token_index + 1 == len(tokens) - 1:
+                tokens = tokens[0:token_index - 1] + [temp_var]
+            else:
+                tokens = tokens[0:token_index - 1] + [temp_var] + tokens[token_index + 2::]
+
+        while (PLUS_TOKEN in tokens) or (MINUS_TOKEN in tokens):
+            plus_token_index = float('inf')
+            minus_token_index = float('inf')
+
+            if PLUS_TOKEN in tokens:
+                plus_token_index = tokens.index(PLUS_TOKEN)
+            if MINUS_TOKEN in tokens:
+                minus_token_index = tokens.index(MINUS_TOKEN)
+
+            token_index = min(plus_token_index, minus_token_index)  # Операции равного приоритета. Возьмём самый первый
+            operation = '+' if token_index == plus_token_index else '-'
+            left_identifier = tokens[token_index - 1]  # Берём предыдущий
+            right_identifier = tokens[token_index + 1]  # Берём следующий
+
+            if not (
+                    isinstance(left_identifier, identifiers_classes) and
+                    isinstance(right_identifier, identifiers_classes)
+            ):
+                raise WrongExpressionError()
+            if not (left_identifier.type in arithmetic_types and right_identifier.type in arithmetic_types):
+                raise WrongTypeForOperator()
+
+            if left_identifier.type != right_identifier.type:
+                raise TypeIncompatibilityError()
+
+            temp_var = ArithmeticOperationHandler.handle(
+                left_identifier_name=left_identifier.name,
+                right_identifier_name=right_identifier.name,
+                operation=operation,
+                type_=left_identifier.type
+            )
+
+            if token_index + 1 == len(tokens) - 1:
+                tokens = tokens[0:token_index - 1] + [temp_var]
+            else:
+                tokens = tokens[0:token_index - 1] + [temp_var] + tokens[token_index + 2::]
