@@ -35,6 +35,7 @@ res_sub = c - d
 res_and = e and f
 res_or = e or f
 res_not = not e
+res_not = e and not f and e
 class_var1.class_int = 5
 class_var2.class_int = class_var1.class_int + 1
 
