@@ -73,5 +73,9 @@ class TypeIncompatibilityError(BaseAnalyzerException):
     msg = 'Типы не совместимы'
 
 
+class WrongTypeForOperator(BaseAnalyzerException):
+    msg = 'Неверный тип для операции'
+
+
 class RelationCountError(BaseAnalyzerException):
     msg = 'Допустимо не более 1 операции сравнения'

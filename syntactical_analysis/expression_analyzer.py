@@ -7,9 +7,11 @@ from tokens import (
 )
 from .custom_exceptions import (
     WrongTokenError, AssignmentExpectedError, UnknownFieldError, WrongExpressionError, TypeIncompatibilityError,
-    RelationCountError, UnknownVarError, VarNameExpectedError, AnalysisException
+    RelationCountError, UnknownVarError, VarNameExpectedError, AnalysisException, WrongTypeForOperator
 )
 from .identifier_info import IdentifierInfo
+from .handlers import NotOperationHandler
+from .commands import commands
 
 __all__ = [
     'ExpressionAnalyzer',
@@ -126,8 +128,16 @@ class ExpressionAnalyzer(object):
             raise RelationCountError()
         # endregion
 
-        # Приоритет операций
-        # 1. Сравнение
-        # 2. NOT
-        # 3. AND, *, /
-        # 4. OR, +, -
+        while NOT_TOKEN in tokens:
+            not_token_index = tokens.index(NOT_TOKEN)
+            identifier = tokens[not_token_index + 1]  # Берем следующий
+            if identifier.type != BOOL:
+                raise WrongTypeForOperator()
+
+            identifier_name = identifier.name
+            temp_var = NotOperationHandler.handle(identifier_name)
+            if not_token_index + 1 == len(tokens) - 1:
+                # not a находится в конце
+                tokens = tokens[0:not_token_index] + [temp_var]
+            else:
+                tokens = tokens[0:not_token_index] + [temp_var] + tokens[not_token_index + 2::]
