@@ -279,7 +279,7 @@ class SyntacticalAnalyzer(object):
                             break
                     else:
                         raise AnalysisException()
-                print()
+                match_case_data.analyze()
             else:
                 raise AnalysisException()
 
