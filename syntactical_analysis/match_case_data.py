@@ -1,7 +1,8 @@
 from typing import List
 
-from syntactical_analysis.custom_exceptions import TooManyDefaultCases
+from syntactical_analysis.custom_exceptions import TooManyDefaultCasesError, DefaultCaseWrongLocationError
 from syntactical_analysis.expression_analyzer import ExpressionAnalyzer
+from syntactical_analysis.utils import parse_identifiers
 
 
 class MatchCaseData(object):
@@ -10,12 +11,22 @@ class MatchCaseData(object):
         self.cases = []  # type: List[CaseData]
 
     def check_cases(self):
-        if len(list(filter(lambda c: c.const_token is None, self.cases))) > 1:
-            raise TooManyDefaultCases()
+        found = False
+        cases_count = len(self.cases)
+        for ind, case in enumerate(self.cases):
+            if case.const_token is None:
+                if found:
+                    raise TooManyDefaultCasesError()
+                if ind == cases_count - 1:
+                    raise DefaultCaseWrongLocationError()
+                found = True
 
     def analyze(self):
         self.check_cases()
-        pass
+        target = parse_identifiers(self.target_tokens)
+
+        for case in self.cases:
+            pass
 
 
 class CaseData(object):

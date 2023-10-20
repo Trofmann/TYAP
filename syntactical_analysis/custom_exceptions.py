@@ -97,5 +97,9 @@ class ColonExpectedError(BaseAnalyzerException):
     msg = 'Ожидалось двоеточие'
 
 
-class TooManyDefaultCases(BaseAnalyzerException):
+class TooManyDefaultCasesError(BaseAnalyzerException):
     msg = 'Превышено количество операторов по умолчанию'
+
+
+class DefaultCaseWrongLocationError(BaseAnalyzerException):
+    msg = 'Оператор по умолчанию должен быть последним'
