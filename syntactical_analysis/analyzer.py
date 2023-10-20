@@ -18,7 +18,7 @@ from .custom_exceptions import (
     CaseExpectedError, DigitalConstExpectedError, ColonExpectedError
 )
 from .expression_analyzer import ExpressionAnalyzer
-from .commands import commands
+from .commands import commands, fix_commands
 from .match_case_data import MatchCaseData, CaseData
 
 
@@ -282,6 +282,7 @@ class SyntacticalAnalyzer(object):
                 match_case_data.analyze()
             else:
                 raise AnalysisException()
+        fix_commands()
 
     def _var_definition(self):
         """Разбор блока описания переменных"""

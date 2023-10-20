@@ -41,4 +41,22 @@ class GotoCommand(object):
         return f'goto {self.next_command_ind}'
 
 
+class NoopCommand(object):
+    def __str__(self):
+        return 'noop'
+
+
+def fix_commands():
+    """Исправление команд"""
+    # Проблема: GotoCommand и ConditionCommand могут ссылать на несуществующий индекс команды
+    max_command_ind = float('-inf')
+    for command in commands:
+        if isinstance(command, GotoCommand):
+            max_command_ind = max(max_command_ind, command.next_command_ind)
+        elif isinstance(command, ConditionCommand):
+            max_command_ind = max(max_command_ind, command.goto_command_ind)
+    if max_command_ind == len(commands):
+        commands.append(NoopCommand())
+
+
 commands = []

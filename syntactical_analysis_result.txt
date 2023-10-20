@@ -61,3 +61,4 @@ if class_var2.class_int != 5 goto 63
 a = 9
 goto 63
 a = 10
+noop
