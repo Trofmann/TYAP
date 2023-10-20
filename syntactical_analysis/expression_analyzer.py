@@ -99,6 +99,8 @@ class ExpressionAnalyzer(object):
 
         while NOT_TOKEN in tokens:
             not_token_index = tokens.index(NOT_TOKEN)
+            if not_token_index + 1 == len(tokens):
+                raise AnalysisException()
             identifier = tokens[not_token_index + 1]  # Берем следующий
             if not (isinstance(identifier, identifiers_classes) or identifier in bool_tokens):
                 raise WrongExpressionError()
@@ -120,6 +122,8 @@ class ExpressionAnalyzer(object):
         while AND_TOKEN in tokens:
             and_token_index = tokens.index(AND_TOKEN)
             left_identifier = tokens[and_token_index - 1]  # Берём предыдущий
+            if and_token_index + 1 == len(tokens):
+                raise AnalysisException()
             right_identifier = tokens[and_token_index + 1]  # Берём следующий
 
             if not (
@@ -153,6 +157,8 @@ class ExpressionAnalyzer(object):
         while OR_TOKEN in tokens:
             or_token_index = tokens.index(OR_TOKEN)
             left_identifier = tokens[or_token_index - 1]  # Берём предыдущий
+            if or_token_index + 1 == len(tokens):
+                raise AnalysisException()
             right_identifier = tokens[or_token_index + 1]  # Берём следующий
 
             if not (
@@ -195,6 +201,8 @@ class ExpressionAnalyzer(object):
             token_index = min(mult_token_index, div_token_index)  # Операции равного приоритета. Возьмём самый первый
             operation = '*' if token_index == mult_token_index else '/'
             left_identifier = tokens[token_index - 1]  # Берём предыдущий
+            if token_index + 1 == len(tokens):
+                raise AnalysisException()
             right_identifier = tokens[token_index + 1]  # Берём следующий
 
             if not (
@@ -242,6 +250,8 @@ class ExpressionAnalyzer(object):
             token_index = min(plus_token_index, minus_token_index)  # Операции равного приоритета. Возьмём самый первый
             operation = '+' if token_index == plus_token_index else '-'
             left_identifier = tokens[token_index - 1]  # Берём предыдущий
+            if token_index + 1 == len(tokens):
+                raise AnalysisException()
             right_identifier = tokens[token_index + 1]  # Берём следующий
 
             if not (
@@ -302,6 +312,8 @@ class ExpressionAnalyzer(object):
             rel_token_index = tokens.index(token)
 
             left_identifier = tokens[rel_token_index - 1]
+            if token_index + 1 == len(tokens):
+                raise AnalysisException()
             right_identifier = tokens[rel_token_index + 1]
 
             if not (
