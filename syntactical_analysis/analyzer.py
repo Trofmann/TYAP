@@ -14,10 +14,11 @@ from tokens import (
 from .custom_exceptions import (
     IdentifierRedeclarationException, TabExpectedException, NewLineExpectedException, TypeNameExpectedException,
     StartProgExpectedError, EndProgExpectedError, BlockVarDefExpectedError, EndBlockVarDefExpectedError,
-    VarNameExpectedError, AnalysisException, FieldRedeclarationError, WrongTokenError,
+    VarNameExpectedError, AnalysisException, FieldRedeclarationError, WrongTokenError, IdentifierExpectedError
 )
 from .expression_analyzer import ExpressionAnalyzer
 from .commands import commands
+from .match_case_data import MatchCaseData
 
 
 class SyntacticalAnalyzer(object):
@@ -145,7 +146,42 @@ class SyntacticalAnalyzer(object):
                 # Собрали токены выражения. Надо обработать
                 expression_analyzer = ExpressionAnalyzer(tokens=expression_tokens)
             elif token == MATCH_TOKEN:
-                raise NotImplementedError()
+                match_case_data = MatchCaseData()
+                next_token = self.tokens[current_token_index + 1]
+                if not isinstance(next_token, IdentifierToken):
+                    # После match может идти только идентификатор
+                    raise IdentifierExpectedError()
+                target_identifier_tokens = []
+                while True:
+                    # Ищем двоеточие
+                    current_token_index += 1
+                    current_token = self.tokens[current_token_index]
+                    if current_token == COLON_TOKEN:
+                        # Нашли, завершим
+                        break
+
+                    if isinstance(current_token, IdentifierToken):
+                        # Текущий токен идентификатор. А значит предыдущий либо точка, либо match
+                        prev_token = self.tokens[current_token_index - 1]
+                        if prev_token not in [MATCH_TOKEN, POINT_TOKEN]:
+                            raise WrongTokenError()
+                        # А следующий - либо двоеточие, либо точка
+                        next_token = self.tokens[current_token_index + 1]
+                        if next_token not in [COLON_TOKEN, POINT_TOKEN]:
+                            raise WrongTokenError()
+                        target_identifier_tokens.append(current_token)
+                    elif current_token == POINT_TOKEN:
+                        # Текущий токен точка, а значит и следующий, предыдущий - идентификаторы
+                        prev_token = self.tokens[current_token_index - 1]
+                        next_token = self.tokens[current_token_index + 1]
+                        if not (isinstance(prev_token, IdentifierToken) and isinstance(next_token, IdentifierToken)):
+                            raise IdentifierExpectedError()
+                        target_identifier_tokens.append(current_token)
+
+                if not target_identifier_tokens:
+                    raise WrongTokenError()
+                match_case_data.target_tokens = target_identifier_tokens
+
             else:
                 raise AnalysisException()
 

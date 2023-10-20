@@ -79,3 +79,7 @@ class WrongTypeForOperator(BaseAnalyzerException):
 
 class RelationCountError(BaseAnalyzerException):
     msg = 'Допустимо не более 1 операции сравнения'
+
+
+class IdentifierExpectedError(BaseAnalyzerException):
+    msg = 'Ожидался идетификатор'

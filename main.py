@@ -1,7 +1,7 @@
 from lexical_analysis import LexicalAnalyzer
 from syntactical_analysis import SyntacticalAnalyzer
 
-DEBUG = True
+DEBUG = False
 
 lexical_analyzer = LexicalAnalyzer()
 lexical_analyzer.analyze()
