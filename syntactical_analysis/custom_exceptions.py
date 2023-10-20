@@ -95,3 +95,7 @@ class DigitalConstExpectedError(BaseAnalyzerException):
 
 class ColonExpectedError(BaseAnalyzerException):
     msg = 'Ожидалось двоеточие'
+
+
+class TooManyDefaultCases(BaseAnalyzerException):
+    msg = 'Превышено количество операторов по умолчанию'
