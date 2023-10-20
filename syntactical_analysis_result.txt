@@ -53,3 +53,11 @@ res_not = $11
 class_var1.class_int = 5
 $12 = class_var1.class_int + 1
 class_var2.class_int = $12
+if class_var2.class_int != 4 goto 63
+$13 = 8 + 8
+a = $13
+goto 63
+if class_var2.class_int != 5 goto 63
+a = 9
+goto 63
+a = 10

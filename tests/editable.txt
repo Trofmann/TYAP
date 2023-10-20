@@ -41,7 +41,7 @@ class_var2.class_int = class_var1.class_int + 1
 
 match class_var2.class_int:
 	case 4:
-		a = 8
+		a = 8 + 8
 	case 5:
 		a = 9
 	case _:
