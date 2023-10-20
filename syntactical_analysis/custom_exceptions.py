@@ -82,4 +82,16 @@ class RelationCountError(BaseAnalyzerException):
 
 
 class IdentifierExpectedError(BaseAnalyzerException):
-    msg = 'Ожидался идетификатор'
+    msg = 'Ожидался идентификатор'
+
+
+class CaseExpectedError(BaseAnalyzerException):
+    msg = 'Ожидался case'
+
+
+class DigitalConstExpectedError(BaseAnalyzerException):
+    msg = 'Ожидалась числовая константа'
+
+
+class ColonExpectedError(BaseAnalyzerException):
+    msg = 'Ожидалось двоеточие'

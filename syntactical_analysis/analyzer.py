@@ -4,8 +4,8 @@ from typing import List
 from tokens import (
     Token, IdentifierToken, DigitalConstToken,
     CLASS_TOKEN, COLON_TOKEN, NL_TOKEN, TAB_TOKEN, START_PROG_TOKEN, END_PROG_TOKEN,
-    BLOCK_VAR_DEF_TOKEN, ENDBLOCK_VAR_DEF_TOKEN, MATCH_TOKEN, POINT_TOKEN,
-    INT_TOKEN, FLOAT_TOKEN, BOOL_TOKEN,
+    BLOCK_VAR_DEF_TOKEN, ENDBLOCK_VAR_DEF_TOKEN, MATCH_TOKEN, CASE_TOKEN, POINT_TOKEN,
+    INT_TOKEN, FLOAT_TOKEN, BOOL_TOKEN, UNDERSCORE_TOKEN,
     PLUS_TOKEN, MINUS_TOKEN, DIV_TOKEN, MULT_TOKEN, AND_TOKEN, OR_TOKEN, NOT_TOKEN,
     EQUAL_TOKEN, NOT_EQUAL_TOKEN, LESS_TOKEN, MORE_TOKEN, LESS_EQUAL_TOKEN, MORE_EQUAL_TOKEN,
     ASSIGNMENT_TOKEN,
@@ -14,11 +14,12 @@ from tokens import (
 from .custom_exceptions import (
     IdentifierRedeclarationException, TabExpectedException, NewLineExpectedException, TypeNameExpectedException,
     StartProgExpectedError, EndProgExpectedError, BlockVarDefExpectedError, EndBlockVarDefExpectedError,
-    VarNameExpectedError, AnalysisException, FieldRedeclarationError, WrongTokenError, IdentifierExpectedError
+    VarNameExpectedError, AnalysisException, FieldRedeclarationError, WrongTokenError, IdentifierExpectedError,
+    CaseExpectedError, DigitalConstExpectedError, ColonExpectedError
 )
 from .expression_analyzer import ExpressionAnalyzer
 from .commands import commands
-from .match_case_data import MatchCaseData
+from .match_case_data import MatchCaseData, CaseData
 
 
 class SyntacticalAnalyzer(object):
@@ -153,12 +154,19 @@ class SyntacticalAnalyzer(object):
                     raise IdentifierExpectedError()
                 target_identifier_tokens = []
                 while True:
-                    # Ищем двоеточие
+                    # Ищем новую строку
                     current_token_index += 1
                     current_token = self.tokens[current_token_index]
-                    if current_token == COLON_TOKEN:
+                    if current_token == NL_TOKEN:
+                        prev_token = self.tokens[current_token_index - 1]
+                        if prev_token != COLON_TOKEN:
+                            raise WrongTokenError()
                         # Нашли, завершим
                         break
+                    if current_token == COLON_TOKEN:
+                        prev_token = self.tokens[current_token_index - 1]
+                        if not isinstance(prev_token, IdentifierToken):
+                            raise IdentifierExpectedError()
 
                     if isinstance(current_token, IdentifierToken):
                         # Текущий токен идентификатор. А значит предыдущий либо точка, либо match
@@ -182,6 +190,96 @@ class SyntacticalAnalyzer(object):
                     raise WrongTokenError()
                 match_case_data.target_tokens = target_identifier_tokens
 
+                case_data = None
+
+                while True:
+                    case_data = CaseData() if case_data is None else case_data
+                    current_token_index += 1
+                    if current_token_index == len(self.tokens):
+                        break
+                    token = self.tokens[current_token_index]
+
+                    prev_token = self.tokens[current_token_index - 1]
+                    next_token = self.tokens[current_token_index + 1]
+
+                    if token == TAB_TOKEN:
+                        # Встретили таблуляцию
+                        if prev_token == TAB_TOKEN:
+                            # Это второй таб
+                            if not isinstance(next_token, IdentifierToken):
+                                raise WrongTokenError()
+                            current_token_index += 1
+                            token = self.tokens[current_token_index]
+
+                            expression_tokens = [token]
+                            while True:
+                                # Надо проанализировать выражение
+                                current_token_index += 1
+                                if current_token_index == tokens_count:
+                                    # Дошли до конца файла. Выйдем
+                                    break
+                                token = self.tokens[current_token_index]
+
+                                if token == NL_TOKEN:
+                                    # Дошли до конца строки. Выйдем
+                                    break
+
+                                identifier_cond = isinstance(token, IdentifierToken)
+                                digital_const_cond = isinstance(token, DigitalConstToken)
+                                operator_cond = token in [
+                                    PLUS_TOKEN, MINUS_TOKEN, DIV_TOKEN, MULT_TOKEN, AND_TOKEN, OR_TOKEN, NOT_TOKEN,
+                                    EQUAL_TOKEN, NOT_EQUAL_TOKEN, LESS_TOKEN, MORE_TOKEN, LESS_EQUAL_TOKEN,
+                                    MORE_EQUAL_TOKEN
+                                ]
+                                true_false_cond = token in [TRUE_TOKEN, FALSE_TOKEN]
+                                assignment_token = (token == ASSIGNMENT_TOKEN)
+                                point_cond = (token == POINT_TOKEN)
+                                cond = any([
+                                    identifier_cond, digital_const_cond, operator_cond, true_false_cond,
+                                    assignment_token, point_cond
+                                ])
+
+                                # Пока просто проверим, что нам придут правильные токены. Все остальные проверки позже
+                                if cond:
+                                    # Удовлетворяет хотя бы одному условию, добавим
+                                    expression_tokens.append(token)
+                                else:
+                                    raise WrongTokenError()
+                            case_data.expression_tokens = expression_tokens
+                            # Добавим в список кейсов
+                            match_case_data.cases.append(case_data)
+                            # Можно сбросить
+                            case_data = None
+                        elif prev_token == NL_TOKEN:
+                            # Это первый таб
+                            if next_token not in [CASE_TOKEN, TAB_TOKEN]:
+                                raise WrongTokenError()
+                        else:
+                            raise WrongTokenError()
+
+                    elif token == CASE_TOKEN:
+                        # Встретили case
+                        if not (isinstance(next_token, DigitalConstToken) or next_token == UNDERSCORE_TOKEN):
+                            raise WrongTokenError()
+                    elif isinstance(token, DigitalConstToken) or token == UNDERSCORE_TOKEN:
+                        if prev_token != CASE_TOKEN:
+                            raise CaseExpectedError()
+                        if next_token != COLON_TOKEN:
+                            raise ColonExpectedError()
+                        if token != UNDERSCORE_TOKEN:
+                            case_data.const_token = token
+                    elif token == COLON_TOKEN:
+                        if not (isinstance(prev_token, DigitalConstToken) or prev_token == UNDERSCORE_TOKEN):
+                            raise WrongTokenError()
+                        if next_token != NL_TOKEN:
+                            raise TabExpectedException()
+                    elif token == NL_TOKEN:
+                        if next_token != TAB_TOKEN or current_token_index == len(self.tokens):
+                            # Конец match case
+                            break
+                    else:
+                        raise AnalysisException()
+                print()
             else:
                 raise AnalysisException()
 
